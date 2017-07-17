@@ -195,6 +195,19 @@ compileTestJava {
   dependsOn getQuoter
 }
 
+task resolveDependencies {
+  doLast {
+    project.rootProject.allprojects.each { subProject ->
+      subProject.buildscript.configurations.each { configuration ->
+        configuration.resolve()
+      }
+      subProject.configurations.each { configuration ->
+        configuration.resolve()
+      }
+    }
+  }
+}
+
 task runQuoter(type: Exec, dependsOn: getQuoter) {
   executable quoterExe
   args "start"

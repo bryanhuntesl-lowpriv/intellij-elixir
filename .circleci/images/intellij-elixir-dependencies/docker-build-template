@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -eux -o pipefail
+
+render() {
+  sed "s!%%ELIXIR_VERSION%%!$1!g;" $2
+}
+
+
+idea_versions=(15.0.6 2016.1.4 2016.2.5 2016.3.7 2017.1.5)
+elixir_versions=(1.2.6 1.3.4 1.4.5)
+parent_directory=.circleci/images/intellij-elixir-dependencies
+
+for elixir_version in ${elixir_versions[*]}; do
+  for idea_version in ${idea_versions[*]}; do
+    tag_directory=${parent_directory}/elixir/${elixir_versions}/idea/${idea_version}
+    mkdir -p ${tag_directory}
+    render ${elixir_version} ${parent_directory}/Dockerfile.template > ${tag_directory}/Dockerfile
+    tag="kronicdeth/intellij-elixir-dependencies:${elixir_version}-${idea_version}"
+    ln -sf ${tag_directory}/Dockerfile Dockerfile
+    docker build --build-arg IDEA_VERSION="${idea_version}" \
+                 --tag ${tag} .
+    docker push ${tag}
+  done
+done

@@ -1,0 +1,59 @@
+FROM circleci/elixir:%%ELIXIR_VERSION%%
+
+USER root
+
+RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
+    echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | \
+      sudo tee /etc/apt/sources.list.d/webupd8team-java.list && \
+    echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | \
+      sudo tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
+    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \
+    apt-get update && \
+    apt-get install -y oracle-java8-installer && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /var/cache/oracle-jdk8-installer
+
+# Gradle
+ENV GRADLE_VERSION 3.3
+ENV GRADLE_SHA c58650c278d8cf0696cab65108ae3c8d95eea9c1938e0eb8b997095d5ca9a292
+
+RUN cd /usr/lib \
+ && curl -fl https://downloads.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -o gradle-bin.zip \
+ && echo "$GRADLE_SHA gradle-bin.zip" | sha256sum -c - \
+ && unzip "gradle-bin.zip" \
+ && ln -s "/usr/lib/gradle-${GRADLE_VERSION}/bin/gradle" /usr/bin/gradle \
+ && rm "gradle-bin.zip"
+
+# Set Appropriate Environmental Variables
+ENV GRADLE_HOME /usr/lib/gradle
+ENV PATH $PATH:$GRADLE_HOME/bin
+
+ENV DISPLAY ":99.0"
+ENV TERM "dumb"
+ARG IDEA_VERSION=2017.1.5
+ENV IDEA_VERSION=${IDEA_VERSION}
+ENV ORG_GRADLE_PROJECT_elixirVersion "${ELIXIR_VERSION}"
+ENV ORG_GRADLE_PROJECT_ideaVersion "${IDEA_VERSION}"
+
+WORKDIR /code
+
+COPY build.gradle gradle.properties ./
+
+RUN mkdir -p jps-builder
+COPY jps-builder/build.gradle ./jps-builder/build.gradle
+
+RUN mkdir -p jps-builder/resources/META-INF/services
+COPY jps-builder/resources/META-INF/services/org.jetbrains.jps.incremental.BuilderService jps-builder/resources/META-INF/
+
+RUN mkdir -p jps-shared
+COPY jps-shared/build.gradle jps-shared/
+
+RUN mkdir -p jps-shared/resources/META-INF/services
+COPY jps-shared/resources/META-INF/services/org.jetbrains.jps.model.serialization.JpsModelSerializerExtension jps-shared/resources/META-INF/services/
+
+RUN mkdir -p resources/META-INF
+COPY resources/META-INF/*plugin.xml resources/META-INF/
+
+USER circleci
+
+RUN gradle resolveDependencies
