@@ -268,14 +268,16 @@ OPERATOR = {FOUR_TOKEN_OPERATOR} |
            {TWO_TOKEN_OPERATOR} |
            {ONE_TOKEN_OPERATOR}
 
+ENDING = [?!]
+
 /*
  * Atom
  */
 
-ATOM_END = [?!]
-ATOM_MIDDLE = [0-9a-zA-Z@_]
-ATOM_START = [a-zA-Z_]
-ATOM = {ATOM_START} {ATOM_MIDDLE}* {ATOM_END}?
+ATOM_START = [\p{idstart}_]
+ATOM_CONTINUE = [\p{idcontinue}@]
+ATOM_ENDING = {ENDING}
+ATOM = {ATOM_START} {ATOM_CONTINUE}* {ATOM_ENDING}?
 COLON = :
 
 /*
@@ -376,23 +378,34 @@ INVALID_OCTAL_DIGITS = [A-Za-z8-9]+
 
 INVALID_UNKNOWN_BASE_DIGITS = [A-Za-z0-9]+
 
+
 /*
- * Identifiers
+ * Identifiers -
+ *
+ * Unicode R1 Default identifiers
+ * - titlecaseletter
+ * - uppercaseletter
+ * + `_`
  */
 
-IDENTIFIER_TOKEN_END = [?!]
-IDENTIFIER_TOKEN_MIDDLE = [0-9a-zA-Z_]
-IDENTIFIER_TOKEN_START = [a-z_]
-IDENTIFIER_TOKEN_HEAD = {IDENTIFIER_TOKEN_START}
-IDENTIFIER_TOKEN_TAIL = {IDENTIFIER_TOKEN_MIDDLE}* {IDENTIFIER_TOKEN_END}?
-IDENTIFIER_TOKEN = ({IDENTIFIER_TOKEN_HEAD} {IDENTIFIER_TOKEN_TAIL}  | "...")
+// titlecase and uppercaseletter is reserved for ALIAS
+IDENTIFIER_TOKEN_START = [[\p{idstart}--[\p{titlecaseletter}||\p{uppercaseletter}]]_]
+IDENTIFIER_TOKEN_CONTINUE = [\p{idcontinue}]
+IDENTIFIER_TOKEN_ENDING = {ENDING}
+IDENTIFIER_TOKEN = ({IDENTIFIER_TOKEN_START} {IDENTIFIER_TOKEN_CONTINUE}* {IDENTIFIER_TOKEN_ENDING}? | "...")
 
 /*
  * Aliases
+ *
+ * Unicode R1 Default identifiers
+ * - lowercaseletter
  */
 
-ALIAS_HEAD = [A-Z]
-ALIAS = {ALIAS_HEAD} {IDENTIFIER_TOKEN_TAIL}
+// lowercaseletter is reserved for IDENTIFIER_TOKEN
+ALIAS_START = [[\p{idstart}--\p{lowercaseletter}]]
+ALIAS_CONTINUE = [\p{idcontinue}]
+ALIAS_ENDING = {ENDING}
+ALIAS = {ALIAS_START} {ALIAS_CONTINUE}* {ALIAS_ENDING}?
 
 /*
  * Bit Strings
