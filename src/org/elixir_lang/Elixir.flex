@@ -395,15 +395,12 @@ IDENTIFIER_TOKEN_ENDING = {ENDING}
 IDENTIFIER_TOKEN = ({IDENTIFIER_TOKEN_START} {IDENTIFIER_TOKEN_CONTINUE}* {IDENTIFIER_TOKEN_ENDING}? | "...")
 
 /*
- * Aliases
+ * Aliases are still restricted to ASCII.
  *
- * Unicode R1 Default identifiers
- * - lowercaseletter
+ * See https://github.com/elixir-lang/elixir/blob/v1.5.0/lib/elixir/test/elixir/kernel/errors_test.exs#L62-L80
  */
-
-// lowercaseletter is reserved for IDENTIFIER_TOKEN
-ALIAS_START = [[\p{idstart}--\p{lowercaseletter}]]
-ALIAS_CONTINUE = [\p{idcontinue}]
+ALIAS_START = [A-Z]
+ALIAS_CONTINUE = [0-9a-zA-Z_]
 ALIAS_ENDING = {ENDING}
 ALIAS = {ALIAS_START} {ALIAS_CONTINUE}* {ALIAS_ENDING}?
 
